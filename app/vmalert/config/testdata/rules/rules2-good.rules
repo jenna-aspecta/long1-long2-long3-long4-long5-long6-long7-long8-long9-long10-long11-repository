@@ -1,0 +1,67 @@
+groups:
+  - name: TestGroup
+    interval: 5s
+    concurrency: 2
+    limit: 1000
+    headers:
+      - "MyHeader: foo"
+    notifier_headers:
+      - "MyHeader: foo"
+    params:
+      denyPartialResponse: ["true"]
+    rules:
+      - alert: Conns
+        expr: vm_tcplistener_conns > 0
+        for: 3m
+        debug: true
+        update_entries_limit: 40
+        annotations:
+          labels: "Available labels: {{ $labels }}"
+          summary: Too high connection number for {{ $labels.instance }}
+            {{ with printf "sum(vm_tcplistener_conns{instance=%q})" .Labels.instance | query }}
+              {{ . | first | value }}
+            {{ end }}
+          description: "It is {{ $value }} connections for {{$labels.instance}}"
+          link: http://localhost:3000/d/wNf0q_kZk?viewPanel=51&from={{($activeAt.Add (parseDurationTime "1h")).UnixMilli}}&to={{($activeAt.Add (parseDurationTime "-1h")).UnixMilli}}
+      - alert: ExampleAlertAlwaysFiring
+        update_entries_limit: -1
+        expr: sum by(job)
+          (up == 1)
+        labels:
+          job: '{{ $labels.job }}'
+          dynamic: '{{ $x := query "up" | first | value }}{{ if eq 1.0 $x }}one{{ else }}unknown{{ end }}'
+        annotations:
+          description: Job {{ $labels.job }} is up!
+          external: cluster-{{ $externalLabels.cluster }}; replica-{{ $externalLabels.replica }}
+          summary: All instances up {{ range query "up" }}
+            {{ . | label "instance" }}
+            {{ end }}
+      - record: handler:requests:rate5m
+        expr: sum(rate(prometheus_http_requests_total[5m])) by (handler)
+        labels:
+          recording: true
+      - record: code:requests:rate5m
+        expr: sum(rate(promhttp_metric_handler_requests_total[5m])) by (code)
+        labels:
+          env: dev
+          recording: true
+      - record: code:requests:rate5m
+        expr: sum(rate(promhttp_metric_handler_requests_total[5m])) by (code)
+        labels:
+          env: staging
+          recording: true
+      - record: successful_requests:ratio_rate5m
+        labels:
+          recording: true
+        expr: |2
+            sum(code:requests:rate5m{code="200"})
+          /
+            sum(code:requests:rate5m)
+      - record: code:requests:slo
+        labels:
+           recording: true
+        expr: 0.95
+      - record: time:current
+        labels:
+           recording: true
+        expr: time()

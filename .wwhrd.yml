@@ -1,0 +1,6 @@
+allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+  - ISC
