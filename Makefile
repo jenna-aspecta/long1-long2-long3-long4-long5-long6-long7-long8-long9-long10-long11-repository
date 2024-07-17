@@ -1,3 +1,5 @@
+// test123
+// test34它4
 PKG_PREFIX := github.com/VictoriaMetrics/VictoriaMetrics
 
 MAKE_CONCURRENCY ?= $(shell getconf _NPROCESSORS_ONLN)
